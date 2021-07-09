@@ -1,6 +1,10 @@
+alpine-base
+busybox
+kbd-bkeymaps
 chrony
-less
-logrotate
+e2fsprogs
+haveged
+network-extras
+openssl
 openssh
-ssmtp
-sudo
+tzdata
