@@ -10,6 +10,13 @@ step() {
 step 'Set up timezone'
 setup-timezone -z UTC
 
+step 'Set up hostname'
+cat > /etc/hosts <<-EOF
+127.0.0.1 ${HOSTNAME:-alpine} ${HOSTNAME:-alpine}.local localhost
+::1       ${HOSTNAME:-alpine} ${HOSTNAME:-alpine}.local localhost
+EOF
+echo "${HOSTNAME:-alpine}" > /etc/hostname
+
 step 'Set up networking'
 cat > /etc/network/interfaces <<-EOF
 	iface lo inet loopback
@@ -33,3 +40,7 @@ rc-update add net.eth0 default
 rc-update add net.lo boot
 rc-update add termencoding boot
 rc-update add sshd default
+
+step 'Creating authorized_keys for root'
+mkdir -p /root/.ssh/
+echo "$SSHPUBKEY" >> /root/.ssh/authorized_keys
