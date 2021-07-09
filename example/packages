@@ -1,10 +1,6 @@
 alpine-base
 busybox
-kbd-bkeymaps
 chrony
-e2fsprogs
-haveged
 network-extras
 openssl
 openssh
-tzdata
