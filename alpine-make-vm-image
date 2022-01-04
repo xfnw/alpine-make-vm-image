@@ -271,6 +271,10 @@ setup_extlinux() {
 		-e "s|^[# ]*(serial_port)=.*|\1=$serial_port|" \
 		"$mnt"/etc/update-extlinux.conf
 
+	sed -Ei \
+		-e "s|remount,rw|&,noatime$COMPRESSFLAGS|" \
+		"$mnt"/etc/init.d/root
+
 	chroot "$mnt" extlinux --install /boot
 	chroot "$mnt" update-extlinux --warn-only # 2>&1 \
 	#	| grep -Fv 'extlinux: cannot open device /dev' >&2
@@ -351,9 +355,11 @@ done
 : ${KEYS_DIR:="/etc/apk/keys"}
 : ${PACKAGES:=}
 : ${REPOS_FILE:="/etc/apk/repositories"}
-: ${ROOTFS:="ext4"}
+: ${ROOTFS:="btrfs"}
 : ${SCRIPT_CHROOT:="no"}
 : ${SERIAL_CONSOLE:="no"}
+
+export ROOTFS
 
 case "$ALPINE_BRANCH" in
 	[0-9]*) ALPINE_BRANCH="v$ALPINE_BRANCH";;
@@ -475,12 +481,18 @@ fi
 #-----------------------------------------------------------------------
 einfo 'Setting up extlinux bootloader'
 
+COMPRESSFLAGS=
+if [ "$ROOTFS" = 'btrfs' ]; then
+		COMPRESSFLAGS=',compress=zstd'
+fi
+export COMPRESSFLAGS
+
 _apk add --root . --no-scripts syslinux
 setup_extlinux . "UUID=$root_uuid" "$ROOTFS" "$KERNEL_FLAVOR" "$SERIAL_PORT"
 
 cat > etc/fstab <<-EOF
 	# <fs>		<mountpoint>	<type>	<opts>		<dump/pass>
-	UUID=$root_uuid	/		$ROOTFS	noatime		0 1
+	UUID=$root_uuid	/		$ROOTFS	noatime$COMPRESSFLAGS		0 1
 EOF
 
 #-----------------------------------------------------------------------
