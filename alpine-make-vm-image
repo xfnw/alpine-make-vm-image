@@ -216,7 +216,7 @@ fs_progs_pkg() {
 # Binds the directory $1 at the mountpoint $2 and sets propagation to private.
 mount_bind() {
 	mkdir -p "$2"
-	mount --bind "$1" "$2"
+	mount -o noatime$COMPRESSFLAGS --bind "$1" "$2"
 	mount --make-private "$2"
 }
 
@@ -361,6 +361,12 @@ done
 
 export ROOTFS
 
+COMPRESSFLAGS=
+if [ "$ROOTFS" = 'btrfs' ]; then
+		COMPRESSFLAGS=',compress=zstd'
+fi
+export COMPRESSFLAGS
+
 case "$ALPINE_BRANCH" in
 	[0-9]*) ALPINE_BRANCH="v$ALPINE_BRANCH";;
 esac
@@ -480,12 +486,6 @@ fi
 
 #-----------------------------------------------------------------------
 einfo 'Setting up extlinux bootloader'
-
-COMPRESSFLAGS=
-if [ "$ROOTFS" = 'btrfs' ]; then
-		COMPRESSFLAGS=',compress=zstd'
-fi
-export COMPRESSFLAGS
 
 _apk add --root . --no-scripts syslinux
 setup_extlinux . "UUID=$root_uuid" "$ROOTFS" "$KERNEL_FLAVOR" "$SERIAL_PORT"

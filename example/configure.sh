@@ -46,9 +46,5 @@ step 'Creating authorized_keys for root'
 mkdir -p /root/.ssh/
 echo "$SSHPUBKEY" >> /root/.ssh/authorized_keys
 
-if [ "$ROOTFS" = 'btrfs' ]; then
-	step 'Compressing btrfs'
-	btrfs filesystem defragment -r -czstd /
-fi
 
 
