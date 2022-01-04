@@ -272,8 +272,8 @@ setup_extlinux() {
 		"$mnt"/etc/update-extlinux.conf
 
 	chroot "$mnt" extlinux --install /boot
-	chroot "$mnt" update-extlinux --warn-only 2>&1 \
-		| grep -Fv 'extlinux: cannot open device /dev' >&2
+	chroot "$mnt" update-extlinux --warn-only # 2>&1 \
+	#	| grep -Fv 'extlinux: cannot open device /dev' >&2
 }
 
 # Configures mkinitfs.

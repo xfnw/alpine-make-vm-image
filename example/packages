@@ -1,5 +1,6 @@
 alpine-base
 busybox
+btrfs-progs
 chrony
 network-extras
 openssl
