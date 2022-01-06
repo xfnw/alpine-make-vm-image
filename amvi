@@ -1,0 +1,4 @@
+#!/bin/sh
+
+
+HOSTNAME=${1:-alpine} SSHPUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDBUk5IjB3+trnVO6pncivFbOetUL8BPTl3CwAtk4532 xfnw@raven" ./alpine-make-vm-image --image-format qcow2 --image-size ${3-6G} --repositories-file example/repositories --packages "$(cat example/packages)" --script-chroot ${2-alpine.qcow2} -- ./example/configure.sh
