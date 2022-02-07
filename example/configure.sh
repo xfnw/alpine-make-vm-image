@@ -46,5 +46,10 @@ step 'Creating authorized_keys for root'
 mkdir -p /root/.ssh/
 echo "$SSHPUBKEY" >> /root/.ssh/authorized_keys
 
-
+# without this, the system will fail to boot on the next
+# initramfs rebuild
+if [ "$ROOTFS" = 'btrfs' ]; then
+	step 'Disabling compression on /boot'
+	btrfs property set /boot compression ""
+fi
 
