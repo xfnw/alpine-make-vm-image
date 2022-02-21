@@ -50,5 +50,6 @@ echo "$SSHPUBKEY" >> /root/.ssh/authorized_keys
 if [ "$ROOTFS" = 'btrfs' ]; then
 	step 'Disabling compression on /boot'
 	btrfs property set /boot compression ""
+	ls /boot | xargs -I{} btrfs property set /boot/{} compression ""
 fi
 
