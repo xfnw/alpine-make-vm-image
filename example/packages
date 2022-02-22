@@ -2,6 +2,7 @@ alpine-base
 busybox
 btrfs-progs
 btrfs-compsize
+e2fsprogs-extra
 network-extras
 openssl
 openssh

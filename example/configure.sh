@@ -49,7 +49,6 @@ echo "$SSHPUBKEY" >> /root/.ssh/authorized_keys
 # initramfs rebuild
 if [ "$ROOTFS" = 'btrfs' ]; then
 	step 'Disabling compression on /boot'
-	btrfs property set /boot compression ""
-	ls /boot | xargs -I{} btrfs property set /boot/{} compression ""
+	chattr -R +m /boot 2>/dev/null || true
 fi
 
