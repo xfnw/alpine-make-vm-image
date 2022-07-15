@@ -1,5 +1,7 @@
 #!/bin/sh
 # vim: set ts=4:
+# SPDX-FileCopyrightText: © 2017 Jakub Jirutka <jakub@jirutka.cz>
+# SPDX-License-Identifier: MIT
 #---help---
 # Usage: alpine-make-vm-image [options] [--] <image> [<script> [<script-opts...>]]
 #
@@ -90,7 +92,7 @@ set -eu
 PATH="$PATH:/usr/sbin:/usr/bin:/sbin:/bin"
 
 readonly PROGNAME='alpine-make-vm-image'
-readonly VERSION='0.8.0'
+readonly VERSION='0.9.0'
 readonly VIRTUAL_PKG=".make-$PROGNAME"
 
 # Alpine APK keys for verification of packages for x86_64.
@@ -100,8 +102,8 @@ alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub:MIIBIjANBgkqhkiG9w0BAQEFAAOC
 alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub:MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAutQkua2CAig4VFSJ7v54\nALyu/J1WB3oni7qwCZD3veURw7HxpNAj9hR+S5N/pNeZgubQvJWyaPuQDm7PTs1+\ntFGiYNfAsiibX6Rv0wci3M+z2XEVAeR9Vzg6v4qoofDyoTbovn2LztaNEjTkB+oK\ntlvpNhg1zhou0jDVYFniEXvzjckxswHVb8cT0OMTKHALyLPrPOJzVtM9C1ew2Nnc\n3848xLiApMu3NBk0JqfcS3Bo5Y2b1FRVBvdt+2gFoKZix1MnZdAEZ8xQzL/a0YS5\nHd0wj5+EEKHfOd3A75uPa/WQmA+o0cBFfrzm69QDcSJSwGpzWrD1ScH3AK8nWvoj\nv7e9gukK/9yl1b4fQQ00vttwJPSgm9EnfPHLAtgXkRloI27H6/PuLoNvSAMQwuCD\nhQRlyGLPBETKkHeodfLoULjhDi1K2gKJTMhtbnUcAA7nEphkMhPWkBpgFdrH+5z4\nLxy+3ek0cqcI7K68EtrffU8jtUj9LFTUC8dERaIBs7NgQ/LfDbDfGh9g6qVj1hZl\nk9aaIPTm/xsi8v3u+0qaq7KzIBc9s59JOoA8TlpOaYdVgSQhHHLBaahOuAigH+VI\nisbC9vmqsThF2QdDtQt37keuqoda2E6sL7PUvIyVXDRfwX7uMDjlzTxHTymvq2Ck\nhtBqojBnThmjJQFgZXocHG8CAwEAAQ==
 '
 
-: ${APK_TOOLS_URI:="https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.12.9/x86_64/apk.static"}
-: ${APK_TOOLS_SHA256:="5176da3d4c41f12a08b82809aca8e7e2e383b7930979651b8958eca219815af5"}
+: ${APK_TOOLS_URI:="https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.12.10/x86_64/apk.static"}
+: ${APK_TOOLS_SHA256:="d7506bb11327b337960910daffed75aa289d8bb350feab624c52965be82ceae8"}
 
 : ${APK:="apk"}
 : ${APK_OPTS:="--no-progress"}
@@ -276,8 +278,8 @@ setup_extlinux() {
 		"$mnt"/etc/init.d/root
 
 	chroot "$mnt" extlinux --install /boot
-	chroot "$mnt" update-extlinux --warn-only # 2>&1 \
-	#	| grep -Fv 'extlinux: cannot open device /dev' >&2
+	chroot "$mnt" update-extlinux --warn-only 2>&1 \
+		| { grep -Fv 'extlinux: cannot open device /dev' ||:; } >&2
 }
 
 # Configures mkinitfs.
@@ -317,7 +319,7 @@ wgets() (
 
 #=============================  M a i n  ==============================#
 
-opts=$(getopt -n $PROGNAME -o b:cCf:hi:k:p:r:s:tv \
+opts=$(getopt -n $PROGNAME -o b:cCf:hi:k:m:p:r:s:tv \
 	-l branch:,image-format:,image-size:,initfs-features:,kernel-flavor:,keys-dir:,mirror-uri:,no-cleanup,packages:,repositories-file:,rootfs:,script-chroot,serial-console,help,version \
 	-- "$@") || help 1 >&2
 
@@ -496,9 +498,21 @@ cat > etc/fstab <<-EOF
 EOF
 
 #-----------------------------------------------------------------------
+einfo 'Configuring system'
+
+# We just prepare this config, but don't start the networking service.
+cat > etc/network/interfaces <<-EOF
+	iface lo inet loopback
+
+	iface eth0 inet dhcp
+
+	post-up /etc/network/if-post-up.d/*
+	post-down /etc/network/if-post-down.d/*
+EOF
+
 if [ "$SERIAL_PORT" ]; then
-	echo "$SERIAL_PORT" >> "$mount_dir"/etc/securetty
-	sed -Ei "s|^[# ]*($SERIAL_PORT:.*)|\1|" "$mount_dir"/etc/inittab
+	echo "$SERIAL_PORT" >> etc/securetty
+	sed -Ei "s|^[# ]*($SERIAL_PORT:.*)|\1|" etc/inittab
 fi
 
 #-----------------------------------------------------------------------
