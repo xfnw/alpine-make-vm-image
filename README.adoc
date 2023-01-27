@@ -1,8 +1,8 @@
 = Make Alpine Linux VM Image
 :script-name: alpine-make-vm-image
-:script-sha1: de147fe81402cc21250169a6c7137692c07a8022
+:script-sha1: 1348efd56848ce66442a7fb6666c847ef192e6e2
 :gh-name: alpinelinux/{script-name}
-:version: 0.9.0
+:version: 0.10.0
 
 ifdef::env-github[]
 image:https://github.com/{gh-name}/workflows/CI/badge.svg["Build Status", link="https://github.com/{gh-name}/actions"]
@@ -21,8 +21,12 @@ TIP: Don’t need VM, just wanna chroot into Alpine Linux?
 
 * Linux system with common userland (Busybox or GNU coreutils)
 * POSIX-sh compatible shell (e.g. Busybox ash, dash, Bash, ZSH)
-* qemu-img and qemu-nbd (automatically installed by the script if running on Alpine)
-* e2fsprogs (for ext4), btrfs-progs (for Btrfs), or xfsprogs (for XFS) (automatically installed by the script if running on Alpine)
+* qemu-img and qemu-nbd
+* rsync (needed only for `--fs-skel-dir`)
+* sfdisk (needed only for `--partition`)
+* e2fsprogs (for ext4), btrfs-progs (for Btrfs), or xfsprogs (for XFS)
+
+All dependencies except the first two are automatically installed by the script when running on Alpine.
 
 
 == Usage
