@@ -100,8 +100,10 @@ set -eu
 PATH="$PATH:/usr/sbin:/usr/bin:/sbin:/bin"
 
 readonly PROGNAME='alpine-make-vm-image'
-readonly VERSION='0.10.0'
+readonly VERSION='0.11.1'
 readonly VIRTUAL_PKG=".make-$PROGNAME"
+# An opaque string used to detect changes in resolv.conf.
+readonly RESOLVCONF_MARK="### created by $PROGNAME ###"
 
 # Alpine APK keys for verification of packages for x86_64.
 readonly ALPINE_KEYS='
@@ -223,6 +225,11 @@ fs_progs_pkg() {
 	esac
 }
 
+# Tests if the specified command exists on the system.
+has_cmd() {
+	command -v "$1" >/dev/null
+}
+
 # Binds the directory $1 at the mountpoint $2 and sets propagation to private.
 mount_bind() {
 	mkdir -p "$2"
@@ -240,6 +247,7 @@ prepare_chroot() {
 	mount_bind /sys "$dest"/sys
 
 	install -D -m 644 /etc/resolv.conf "$dest"/etc/resolv.conf
+	echo "$RESOLVCONF_MARK" >> "$dest"/etc/resolv.conf
 }
 
 # Adds specified services to the runlevel. Current working directory must be
@@ -253,6 +261,25 @@ rc_add() {
 		ln -s /etc/init.d/$svc etc/runlevels/$runlevel/$svc
 		echo " * service $svc added to runlevel $runlevel"
 	done
+}
+
+# Ensures that the specified device node exists.
+settle_dev_node() {
+	local dev="$1"
+
+	[ -e "$dev" ] && return 0
+
+	sleep 1  # give hotplug handler some time to kick in
+	[ -e "$dev" ] && return 0
+
+	if has_cmd udevadm; then
+		udevadm settle --exit-if-exists="$dev"
+	elif has_cmd mdev; then
+		mdev -s
+	fi
+	[ -e "$dev" ] && return 0
+
+	return 1
 }
 
 # Installs and configures extlinux.
@@ -443,8 +470,13 @@ nbd_dev=$(attach_image "$IMAGE_FILE" "$IMAGE_FORMAT")
 if [ "$PARTITION" = yes ]; then
 	einfo 'Creating GPT partition table'
 
-	printf '%s\n' 'label: gpt' 'name=system,type=L,bootable' | sfdisk "$nbd_dev"
+	printf '%s\n' \
+		'label: gpt' \
+		'name=system,type=L,bootable,attrs=LegacyBIOSBootable' \
+		| sfdisk "$nbd_dev"
 	root_dev="${nbd_dev}p1"
+	# This is needed when running in a container.
+	settle_dev_node "$root_dev" || die "system didn't create $root_dev node"
 else
 	root_dev="$nbd_dev"
 fi
@@ -516,6 +548,11 @@ einfo 'Setting up extlinux bootloader'
 
 _apk add --root . --no-scripts syslinux
 setup_extlinux . "UUID=$root_uuid" "$ROOTFS" "$KERNEL_FLAVOR" "$SERIAL_PORT"
+
+if [ "$PARTITION" = yes ]; then
+	dd bs=440 count=1 conv=notrunc if=usr/share/syslinux/gptmbr.bin of="$nbd_dev"
+	sync
+fi
 
 cat > etc/fstab <<-EOF
 	# <fs>		<mountpoint>	<type>	<opts>		<dump/pass>
@@ -589,6 +626,16 @@ if [ "$SCRIPT" ]; then
 fi
 
 #-----------------------------------------------------------------------
+if grep -qw "$RESOLVCONF_MARK" etc/resolv.conf 2>/dev/null; then
+	cat > etc/resolv.conf <<-EOF
+		# Default nameservers, replace them with your own.
+		nameserver 1.1.1.1
+		nameserver 2606:4700:4700::1111
+	EOF
+fi
+
+rm -Rf var/cache/apk/* ||:
+
 einfo 'Completed'
 
 cd - >/dev/null

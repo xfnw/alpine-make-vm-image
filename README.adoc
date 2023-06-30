@@ -1,8 +1,8 @@
 = Make Alpine Linux VM Image
 :script-name: alpine-make-vm-image
-:script-sha1: 1348efd56848ce66442a7fb6666c847ef192e6e2
+:script-sha1: 0d5d3e375cb676d6eb5c1a52109a3a0a8e4cd7ac
 :gh-name: alpinelinux/{script-name}
-:version: 0.10.0
+:version: 0.11.1
 
 ifdef::env-github[]
 image:https://github.com/{gh-name}/workflows/CI/badge.svg["Build Status", link="https://github.com/{gh-name}/actions"]
@@ -24,6 +24,7 @@ TIP: Don’t need VM, just wanna chroot into Alpine Linux?
 * qemu-img and qemu-nbd
 * rsync (needed only for `--fs-skel-dir`)
 * sfdisk (needed only for `--partition`)
+* mdev or udevadm (needed only for `--partition` when device hotplug doesn’t work)
 * e2fsprogs (for ext4), btrfs-progs (for Btrfs), or xfsprogs (for XFS)
 
 All dependencies except the first two are automatically installed by the script when running on Alpine.
@@ -40,6 +41,8 @@ You can copy link:{script-name}[{script-name}] into your repository or download 
 wget https://raw.githubusercontent.com/{gh-name}/v{version}/{script-name} \
     && echo '{script-sha1}  {script-name}' | sha1sum -c \
     || exit 1
+
+Or, if you are on Alpine Linux, you can simply install the https://pkgs.alpinelinux.org/packages?name={script-name}[{script-name}] package.
 
 
 == Pitfalls
