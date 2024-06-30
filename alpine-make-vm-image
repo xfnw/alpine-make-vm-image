@@ -204,6 +204,8 @@ attach_image() {
 	qemu-nbd --connect="$disk_dev" --cache=writeback \
 		${format:+--format=$format} "$image" \
 		&& echo "$disk_dev"
+
+	sleep .5
 }
 
 # Prints UUID of filesystem on the specified block device.
