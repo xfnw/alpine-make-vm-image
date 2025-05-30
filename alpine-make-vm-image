@@ -202,8 +202,10 @@ attach_image() {
 	} || die 'No available nbd device found!'
 
 	qemu-nbd --connect="$disk_dev" --cache=writeback \
-		${format:+--format=$format} "$image" \
-		&& echo "$disk_dev"
+		${format:+--format=$format} "$image" || return 1
+
+	sleep 1  # see #45
+	echo "$disk_dev"
 }
 
 # Prints UUID of filesystem on the specified block device.
@@ -553,8 +555,6 @@ fi
 # -E nodiscard / -K - do not attempt to discard blocks at mkfs time (it's
 # useless for NBD image and prints confusing error).
 [ "$ROOTFS" = ext4 ] && mkfs_args='-O ^64bit -E nodiscard' || mkfs_args='-K'
-
-sleep 1  # see #45
 
 mkfs.$ROOTFS -L root $mkfs_args "$root_dev"
 
