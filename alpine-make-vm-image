@@ -633,6 +633,7 @@ einfo "Installing and configuring mkinitfs"
 
 _apk add --root . mkinitfs
 setup_mkinitfs . "base $ROOTFS $INITFS_FEATURES"
+_apk fix --root . mkinitfs
 
 #-----------------------------------------------------------------------
 if [ "$BOOT_MODE" = 'BIOS' ]; then
